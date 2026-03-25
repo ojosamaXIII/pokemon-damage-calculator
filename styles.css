@@ -534,6 +534,11 @@ button {
   width: 72px;
 }
 
+.stats-table th:nth-child(3),
+.stats-table td:nth-child(3) {
+  width: 96px;
+}
+
 .stats-table th:nth-child(4),
 .stats-table td:nth-child(4) {
   width: 86px;
@@ -880,6 +885,7 @@ input[type="number"] {
     grid-column: auto;
   }
 }
+
 
 
 
