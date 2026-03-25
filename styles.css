@@ -636,6 +636,13 @@ input[type="number"] {
   padding-right: 8px;
 }
 
+.nature-select-input {
+  width: 74px;
+  max-width: 100%;
+  min-width: 0;
+  margin-left: auto;
+}
+
 .table-note {
   color: var(--muted);
 }
@@ -848,6 +855,7 @@ input[type="number"] {
     grid-column: auto;
   }
 }
+
 
 
 
