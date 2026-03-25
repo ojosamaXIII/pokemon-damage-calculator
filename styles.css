@@ -524,6 +524,16 @@ button {
   table-layout: fixed;
 }
 
+.stats-table th:nth-child(1),
+.stats-table td:nth-child(1) {
+  width: 54px;
+}
+
+.stats-table th:nth-child(2),
+.stats-table td:nth-child(2) {
+  width: 72px;
+}
+
 .stats-table th,
 .stats-table td {
   padding: 6px 6px;
@@ -836,4 +846,5 @@ input[type="number"] {
     grid-column: auto;
   }
 }
+
 
