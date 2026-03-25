@@ -193,6 +193,9 @@ function applyAttackerAbilityModifiers(context){
     case "sand-force":
       if(getActiveWeather()==="sand"&&["じめん","いわ","はがね"].includes(context.moveType)){context.powerMultiplier*=1.3;context.modifierLabels.push("すなのちから");}
       break;
+    case "guts":
+      if(context.isPhysical&&hasAnyStatusAilment()){context.attackMultiplier*=1.5;context.modifierLabels.push("こんじょう");}
+      break;
     case "toxic-boost":
       if(context.isPhysical&&byId("hasPoison").checked){context.attackMultiplier*=1.5;context.modifierLabels.push("どくぼうそう");}
       break;
@@ -696,3 +699,4 @@ function initializeDefaults(){renderStages("attackStage");renderStages("specialA
 function initializeSelectors(){renderTypeOptions(byId("attackerType1"),true);renderTypeOptions(byId("attackerType2"),true);renderTypeOptions(byId("defenderType1"),true);renderTypeOptions(byId("defenderType2"),true);renderTypeOptions(byId("moveType"),false);renderTargetOptions();renderAbilityOptions("attacker",null);renderAbilityOptions("defender",null);}
 function initialize(){if(isBlockedHost()){renderBlockedHostMessage();return;}initializeDefaults();if(!buildDataStore())return;initializeSelectors();fillDataList("pokemonOptions",dataStore.pokemonEntries);fillDataList("moveOptions",dataStore.moveEntries);bindLookupEvents();bindFieldEvents();restoreState();tryApplyPokemon("attacker",false,true);tryApplyPokemon("defender",false,true);tryApplyMove(false,true);renderPokemonArtwork("attacker",findEntryExact(dataStore.pokemonLookup,byId("attackerName").value));renderPokemonArtwork("defender",findEntryExact(dataStore.pokemonLookup,byId("defenderName").value));updateCalculator();}
 initialize();
+
