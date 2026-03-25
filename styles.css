@@ -39,336 +39,6 @@ body.host-blocked .app-shell {
 button,
 input,
 select {
-  font: inherit;
-}
-
-button {
-  cursor: pointer;
-}
-
-code {
-  display: inline-block;
-  padding: 0.15rem 0.45rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.app-shell {
-  width: min(1600px, calc(100% - 32px));
-  margin: 0 auto;
-  padding: 18px 0 24px;
-}
-
-.app-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 14px;
-}
-
-.section-tag {
-  margin: 0 0 6px;
-  color: var(--muted);
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  font-size: 0.68rem;
-}
-
-.app-header h1,
-.scribble-title,
-.host-block-card h1 {
-  margin: 0;
-  font-family: "Segoe Print", "Comic Sans MS", "Yu Gothic UI", cursive;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-.app-header h1 {
-  font-size: clamp(1.7rem, 1.4vw + 1.1rem, 2.5rem);
-}
-
-.header-copy,
-.dataset-status,
-.card-subtitle,
-.section-line p,
-.status-line,
-.summary-line {
-  margin: 0;
-  color: var(--muted);
-}
-
-.dataset-status {
-  max-width: 420px;
-  padding-top: 8px;
-  text-align: right;
-  line-height: 1.4;
-  font-size: 0.92rem;
-}
-
-.board-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(320px, 0.94fr);
-  gap: 20px;
-  align-items: start;
-}
-
-.battle-card {
-  position: relative;
-  padding: 16px 12px 18px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 18%),
-    var(--panel);
-  border: 1.6px solid var(--line);
-  border-radius: 18px 18px 32px 18px / 18px 18px 38px 22px;
-  box-shadow: var(--shadow);
-  overflow: hidden;
-}
-
-.battle-card::after {
-  content: "";
-  position: absolute;
-  right: -5px;
-  bottom: -6px;
-  width: 88%;
-  height: 72px;
-  border-right: 1.4px solid rgba(255, 255, 255, 0.44);
-  border-bottom: 1.4px solid rgba(255, 255, 255, 0.44);
-  border-bottom-right-radius: 34px;
-  pointer-events: none;
-}
-
-.card-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
-  padding: 0 6px;
-}
-
-.scribble-title {
-  font-size: clamp(2rem, 1.7vw + 1.1rem, 3.1rem);
-  line-height: 0.95;
-}
-
-.card-subtitle {
-  padding-top: 6px;
-  font-size: 0.86rem;
-}
-
-.identity-strip,
-.card-section {
-  margin: 0 2px 10px;
-  padding: 12px;
-  border: 1px solid var(--line-soft);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.01));
-}
-
-.identity-strip {
-  display: grid;
-  gap: 10px;
-  border-radius: 14px 14px 0 0;
-}
-
-.card-section {
-  border-radius: 0;
-  border-left: none;
-  border-right: none;
-  border-top: none;
-}
-
-.pokemon-art-card {
-  display: grid;
-  grid-template-columns: 84px minmax(0, 1fr);
-  gap: 12px;
-  align-items: center;
-}
-
-.pokemon-art-frame {
-  position: relative;
-  display: grid;
-  place-items: center;
-  min-height: 84px;
-  padding: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 18px;
-  background:
-    radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.08), transparent 48%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
-}
-
-.pokemon-art-frame img {
-  width: 100%;
-  max-width: 66px;
-  height: 66px;
-  object-fit: contain;
-  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.24));
-}
-
-.pokemon-art-frame img.is-hidden,
-.pokemon-art-fallback.is-hidden {
-  display: none;
-}
-
-.pokemon-art-fallback {
-  color: var(--muted);
-  font-size: 0.76rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.pokemon-art-role,
-.pokemon-art-label {
-  margin: 0;
-}
-
-.pokemon-art-role,
-.summary-box-label {
-  color: var(--muted);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  font-size: 0.68rem;
-}
-
-.pokemon-art-label {
-  margin-top: 4px;
-  font-size: 1rem;
-  font-weight: 700;
-}
-
-.pokemon-title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 4px;
-}
-
-.pokemon-title-row .pokemon-art-label {
-  margin-top: 0;
-}
-
-.summary-line {
-  margin-top: 4px;
-  font-size: 0.84rem;
-  line-height: 1.45;
-}
-
-.type-icon-row,
-.move-summary-row,
-.type-icon-single {
-  display: flex;
-  align-items: center;
-}
-
-.type-icon-row,
-.move-summary-row {
-  gap: 8px;
-}
-
-.type-icon-row {
-  flex-wrap: wrap;
-}
-
-.type-icon-chip,
-.type-icon-single img {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 28px;
-  min-height: 28px;
-  padding: 2px 4px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.045);
-}
-
-.type-icon-chip img,
-.type-icon-single img {
-  display: block;
-  height: 18px;
-  width: auto;
-}
-
-.type-icon-row--hero {
-  justify-content: flex-end;
-  gap: 10px;
-  flex-wrap: nowrap;
-}
-
-.type-icon-row--hero .type-icon-chip {
-  min-width: 40px;
-  min-height: 40px;
-  padding: 5px 7px;
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.type-icon-row--hero .type-icon-chip img {
-  height: 28px;
-}
-
-.move-summary-row {
-  margin-bottom: 8px;
-}
-
-.type-icon-single {
-  min-width: 36px;
-}
-
-.field-cluster {
-  display: grid;
-  gap: 4px;
-}
-
-.ability-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px;
-  align-items: center;
-}
-
-.field,
-.field--check {
-  display: block;
-}
-
-.field-label {
-  display: block;
-  margin-bottom: 6px;
-  color: var(--muted);
-  font-size: 0.78rem;
-}
-
-.input-action-row,
-.field-grid,
-.battle-summary-grid,
-.modifier-stack {
-  display: grid;
-  gap: 8px;
-}
-
-.input-action-row {
-  grid-template-columns: minmax(0, 1fr) 88px;
-}
-
-.field-grid--compact {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.field--full {
-  grid-column: 1 / -1;
-}
-
-.field--wide {
-  grid-column: span 2;
-}
-
-.is-hidden {
-  display: none !important;
-}
-
-input,
-select {
   width: 100%;
   min-height: 42px;
   border: 1.4px solid rgba(236, 239, 242, 0.72);
@@ -377,6 +47,7 @@ select {
   background: rgba(255, 255, 255, 0.035);
   color: var(--ink);
   outline: none;
+  color-scheme: dark;
 }
 
 .input-readonly {
@@ -399,6 +70,12 @@ select {
   background-repeat: no-repeat;
 }
 
+select option,
+select optgroup {
+  background: #17191d;
+  color: var(--ink);
+}
+
 button {
   min-height: 42px;
   border: none;
@@ -407,7 +84,6 @@ button {
   color: #18140f;
   font-weight: 700;
 }
-
 .status-line {
   min-height: 1.2em;
   font-size: 0.82rem;
@@ -885,6 +561,8 @@ input[type="number"] {
     grid-column: auto;
   }
 }
+
+
 
 
 
