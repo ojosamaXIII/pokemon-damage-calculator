@@ -561,6 +561,12 @@ button {
   padding-right: 4px;
 }
 
+.stats-table td:nth-child(3) .effort-input-group,
+.stats-table td:nth-child(4) .nature-select-input,
+.stats-table td:nth-child(5) .actual-value-input {
+  margin-left: 0;
+}
+
 .stats-table thead th {
   color: var(--muted);
   font-size: 0.72rem;
@@ -874,6 +880,7 @@ input[type="number"] {
     grid-column: auto;
   }
 }
+
 
 
 
