@@ -627,9 +627,11 @@ input[type="number"] {
 }
 
 .actual-value-input {
-  width: 100%;
+  width: 74px;
+  max-width: 100%;
   min-width: 0;
   min-height: 34px;
+  margin-left: auto;
   text-align: right;
   padding-right: 8px;
 }
@@ -846,5 +848,6 @@ input[type="number"] {
     grid-column: auto;
   }
 }
+
 
 
