@@ -515,7 +515,7 @@ button {
 }
 
 .compact-table .stats-table {
-  min-width: 500px;
+  min-width: 0;
 }
 
 .stats-table {
@@ -526,32 +526,32 @@ button {
 
 .stats-table th:nth-child(1),
 .stats-table td:nth-child(1) {
-  width: 54px;
+  width: 46px;
 }
 
 .stats-table th:nth-child(2),
 .stats-table td:nth-child(2) {
-  width: 72px;
+  width: 62px;
 }
 
 .stats-table th:nth-child(3),
 .stats-table td:nth-child(3) {
-  width: 96px;
+  width: 88px;
 }
 
 .stats-table th:nth-child(4),
 .stats-table td:nth-child(4) {
-  width: 86px;
+  width: 82px;
 }
 
 .stats-table th:nth-child(5),
 .stats-table td:nth-child(5) {
-  width: 68px;
+  width: 64px;
 }
 
 .stats-table th,
 .stats-table td {
-  padding: 6px 6px;
+  padding: 5px 4px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   text-align: left;
   white-space: nowrap;
@@ -580,7 +580,7 @@ button {
 
 .stats-table td input,
 .stats-table td select {
-  min-width: 74px;
+  min-width: 64px;
   min-height: 34px;
   margin: 0;
   border-radius: 12px;
@@ -600,9 +600,9 @@ input[type="number"] {
 
 .effort-input-group {
   display: grid;
-  grid-template-columns: 68px 22px;
+  grid-template-columns: 64px 20px;
   align-items: stretch;
-  gap: 6px;
+  gap: 4px;
 }
 
 .effort-input-group input[type="number"]::-webkit-outer-spin-button,
@@ -622,7 +622,7 @@ input[type="number"] {
 }
 
 .effort-stepper-button {
-  min-width: 22px;
+  min-width: 20px;
   min-height: 15px;
   padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.14);
@@ -656,7 +656,7 @@ input[type="number"] {
 }
 
 .actual-value-input {
-  width: 68px;
+  width: 64px;
   max-width: 100%;
   min-width: 0;
   min-height: 34px;
@@ -666,7 +666,7 @@ input[type="number"] {
 }
 
 .nature-select-input {
-  width: 86px;
+  width: 82px;
   max-width: 100%;
   min-width: 0;
   margin-left: 0;
@@ -741,7 +741,7 @@ input[type="number"] {
 
 .result-metrics {
   display: grid;
-  gap: 6px;
+  gap: 4px;
   margin: 0 0 10px;
 }
 
@@ -885,6 +885,8 @@ input[type="number"] {
     grid-column: auto;
   }
 }
+
+
 
 
 
