@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ポケモンダメージ計算ツール</title>
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <section id="hostBlockMessage" class="host-block is-hidden" aria-live="polite">
+    <div class="host-block-card">
+      <p class="section-tag">Blocked Host</p>
+      <h1>このアドレスでは開けません</h1>
+      <p>
+        <code>http://localhost:8000/</code> は無効化しています。
+        ローカルファイルを直接開くか、別ポートのローカルサーバーを使ってください。
+      </p>
+    </div>
+  </section>
+
+  <main class="app-shell">
+    <header class="app-header">
+      <div>
+        <p class="section-tag">Mega Battle Calculator</p>
+        <h1>ポケモンダメージ計算ツール</h1>
+        <p class="header-copy">メガシンカ主体・テラスタルなし・ダブル補正対応</p>
+      </div>
+      <p id="datasetStatus" class="dataset-status is-hidden" aria-hidden="true"></p>
+    </header>
+
+    <section class="board-grid">
+      <section class="battle-card attack-card">
+        <div class="card-head">
+          <h2 class="scribble-title">Attack</h2>
+          <p class="card-subtitle">攻撃側</p>
+        </div>
+
+        <div class="identity-strip">
+          <div class="pokemon-art-card">
+            <div class="pokemon-art-frame">
+              <img id="attackerArtwork" alt="攻撃側ポケモン画像">
+              <span id="attackerArtworkFallback" class="pokemon-art-fallback is-hidden">No Image</span>
+            </div>
+            <div class="pokemon-art-meta">
+              <p class="pokemon-art-role">Attacker</p>
+              <div class="pokemon-title-row">
+                <p id="attackerArtworkLabel" class="pokemon-art-label">ポケモンを選択</p>
+                <div id="attackerTypeIcons" class="type-icon-row type-icon-row--hero" aria-label="攻撃側タイプ"></div>
+              </div>
+              <p id="attackerSummary" class="summary-line">-</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-section">
+          <div class="section-line">
+            <h3>攻撃側ポケモン</h3>
+            <p>候補は図鑑順</p>
+          </div>
+          <div class="input-action-row">
+            <label class="field">
+              <span class="field-label">ポケモン名</span>
+              <input id="attackerName" list="pokemonOptions" type="text" placeholder="ポケモン名">
+            </label>
+            <button id="applyAttackerButton" type="button">反映</button>
+          </div>
+          <p id="attackerLookupStatus" class="status-line"></p>
+          <div class="field field--full">
+            <span class="field-label">特性</span>
+            <div class="ability-row">
+              <select id="attackerAbility"></select>
+              <label class="check-pill check-pill--compact">
+                <input id="attackerAbilityEnabled" type="checkbox">
+                <span>発動</span>
+              </label>
+            </div>
+          </div>
+          <label id="supremeOverlordField" class="field field--full is-hidden">
+            <span class="field-label">そうだいしょう倍率</span>
+            <select id="supremeOverlordMultiplier">
+              <option value="1">1.0x</option>
+              <option value="1.1">1.1x</option>
+              <option value="1.2">1.2x</option>
+              <option value="1.3">1.3x</option>
+              <option value="1.4">1.4x</option>
+              <option value="1.5">1.5x</option>
+            </select>
+          </label>
+          <div class="field-grid field-grid--compact">
+            <label class="field">
+              <span class="field-label">タイプ1</span>
+              <select id="attackerType1"></select>
+            </label>
+            <label class="field">
+              <span class="field-label">タイプ2</span>
+              <select id="attackerType2"></select>
+            </label>
+            <label class="field">
+              <span class="field-label">攻撃ランク</span>
+              <select id="attackStage"></select>
+            </label>
+            <label class="field">
+              <span class="field-label">特攻ランク</span>
+              <select id="specialAttackStage"></select>
+            </label>
+          </div>
+        </div>
+
+        <div class="card-section">
+          <div class="section-line">
+            <h3>攻撃技</h3>
+            <p>候補は技ID順</p>
+          </div>
+          <div class="input-action-row">
+            <label class="field">
+              <span class="field-label">技名</span>
+              <input id="moveName" list="moveOptions" type="text" placeholder="技名">
+            </label>
+            <button id="applyMoveButton" type="button">反映</button>
+          </div>
+          <p id="moveLookupStatus" class="status-line"></p>
+          <div class="move-summary-row">
+            <div id="moveTypeIcon" class="type-icon-single" aria-label="技タイプ"></div>
+            <p id="moveSummaryText" class="summary-line">-</p>
+          </div>
+          <div class="field-grid field-grid--compact">
+            <label class="field">
+              <span class="field-label">タイプ</span>
+              <select id="moveType"></select>
+            </label>
+            <label class="field">
+              <span class="field-label">分類</span>
+              <select id="moveCategory">
+                <option value="physical">物理</option>
+                <option value="special">特殊</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">威力</span>
+              <input id="movePower" class="input-readonly" type="number" min="0" max="300" value="100" readonly>
+            </label>
+            <label class="field">
+              <span class="field-label">命中</span>
+              <input id="moveAccuracy" class="input-readonly" type="text" value="100" readonly>
+            </label>
+              <label class="field">
+                <span class="field-label">対象</span>
+                <select id="moveTarget"></select>
+              </label>
+              <label id="moveHitsField" class="field is-hidden">
+                <span class="field-label">命中回数</span>
+                <select id="moveHits"></select>
+              </label>
+              <label class="field field--check">
+                <span class="field-label">補助</span>
+                <div class="check-inline-row">
+                <label class="check-pill">
+                  <input id="isCritical" type="checkbox">
+                  <span>急所</span>
+                </label>
+              </div>
+            </label>
+            <label class="field field--check field--full">
+              <span class="field-label">状態異常(こんじょう判定込み)</span>
+              <div class="check-inline-row check-inline-row--status">
+                <label class="check-pill">
+                  <input id="isBurned" type="checkbox">
+                  <span>やけど</span>
+                </label>
+                <label class="check-pill">
+                  <input id="hasPoison" type="checkbox">
+                  <span>どく</span>
+                </label>
+                <label class="check-pill">
+                  <input id="hasParalysis" type="checkbox">
+                  <span>まひ</span>
+                </label>
+                <label class="check-pill">
+                  <input id="hasSleep" type="checkbox">
+                  <span>ねむり</span>
+                </label>
+                <label class="check-pill">
+                  <input id="hasFreeze" type="checkbox">
+                  <span>こおり</span>
+                </label>
+              </div>
+            </label>
+          </div>
+          <div id="moveSpecificSection" class="field field--full is-hidden">
+            <span class="field-label">技固有条件</span>
+            <div class="field-grid field-grid--compact">
+              <label id="moveVariablePowerField" class="field is-hidden">
+                <span class="field-label">技威力</span>
+                <select id="moveVariablePower"></select>
+              </label>
+              <label id="moveUserDefenseField" class="field is-hidden">
+                <span class="field-label">攻撃側防御実数値</span>
+                <input id="moveUserDefenseActual" type="number" min="1" max="999" value="100">
+              </label>
+              <label id="moveTargetAttackField" class="field is-hidden">
+                <span class="field-label">防御側攻撃実数値</span>
+                <input id="moveTargetAttackActual" type="number" min="1" max="999" value="100">
+              </label>
+              <label id="moveTargetStatusField" class="field field--check is-hidden">
+                <span class="field-label">対象状態</span>
+                <label class="check-pill">
+                  <input id="moveTargetStatused" type="checkbox">
+                  <span>状態異常</span>
+                </label>
+              </label>
+              <label id="moveTargetItemField" class="field field--check is-hidden">
+                <span class="field-label">対象持ち物</span>
+                <label class="check-pill">
+                  <input id="moveTargetHasItem" type="checkbox" checked>
+                  <span>持ち物あり</span>
+                </label>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-section">
+          <div class="section-line">
+            <h3>攻撃側ステータス</h3>
+            <p>攻撃計算に必要な能力のみ表示</p>
+          </div>
+          <div class="stats-table-wrap compact-table">
+            <table class="stats-table">
+              <thead>
+                <tr>
+                  <th>能力</th>
+                  <th>種族値</th>
+                  <th>努力値</th>
+                  <th>性格</th>
+                  <th>実数値</th>
+                </tr>
+              </thead>
+              <tbody id="attackerStatRows"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="battle-card defense-card">
+        <div class="card-head">
+          <h2 class="scribble-title">Defense</h2>
+          <p class="card-subtitle">防御側</p>
+        </div>
+
+        <div class="identity-strip">
+          <div class="pokemon-art-card">
+            <div class="pokemon-art-frame">
+              <img id="defenderArtwork" alt="防御側ポケモン画像">
+              <span id="defenderArtworkFallback" class="pokemon-art-fallback is-hidden">No Image</span>
+            </div>
+            <div class="pokemon-art-meta">
+              <p class="pokemon-art-role">Defender</p>
+              <div class="pokemon-title-row">
+                <p id="defenderArtworkLabel" class="pokemon-art-label">ポケモンを選択</p>
+                <div id="defenderTypeIcons" class="type-icon-row type-icon-row--hero" aria-label="防御側タイプ"></div>
+              </div>
+              <p id="defenderSummary" class="summary-line">-</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-section">
+          <div class="section-line">
+            <h3>防御側ポケモン</h3>
+            <p>候補は図鑑順</p>
+          </div>
+          <div class="input-action-row">
+            <label class="field">
+              <span class="field-label">ポケモン名</span>
+              <input id="defenderName" list="pokemonOptions" type="text" placeholder="ポケモン名">
+            </label>
+            <button id="applyDefenderButton" type="button">反映</button>
+          </div>
+          <p id="defenderLookupStatus" class="status-line"></p>
+          <div class="field field--full">
+            <span class="field-label">特性</span>
+            <div class="ability-row">
+              <select id="defenderAbility"></select>
+              <label class="check-pill check-pill--compact">
+                <input id="defenderAbilityEnabled" type="checkbox">
+                <span>発動</span>
+              </label>
+            </div>
+          </div>
+          <div id="defenderAbilityStateField" class="field field--full is-hidden">
+            <span class="field-label">特性条件</span>
+            <div class="check-inline-row">
+              <label id="defenderStatusedField" class="check-pill is-hidden">
+                <input id="defenderStatused" type="checkbox">
+                <span>状態異常(ふしぎなうろこ)</span>
+              </label>
+              <label id="defenderFullHpField" class="check-pill is-hidden">
+                <input id="defenderFullHp" type="checkbox">
+                <span>HP満タン(マルスケ/ファントムガード)</span>
+              </label>
+            </div>
+          </div>
+          <div class="field-grid field-grid--compact">
+            <label class="field">
+              <span class="field-label">タイプ1</span>
+              <select id="defenderType1"></select>
+            </label>
+            <label class="field">
+              <span class="field-label">タイプ2</span>
+              <select id="defenderType2"></select>
+            </label>
+            <label class="field">
+              <span class="field-label">防御ランク</span>
+              <select id="defenseStage"></select>
+            </label>
+            <label class="field">
+              <span class="field-label">特防ランク</span>
+              <select id="specialDefenseStage"></select>
+            </label>
+          </div>
+          <div class="field-grid field-grid--compact" style="margin-top: 8px;">
+            <label class="field">
+              <span class="field-label">レベル</span>
+              <input id="level" type="number" min="1" max="100" value="50">
+            </label>
+            <label class="field field--check">
+              <span class="field-label">形式</span>
+              <label class="check-pill">
+                <input id="doubleBattle" type="checkbox">
+                <span>ダブル</span>
+              </label>
+            </label>
+          </div>
+        </div>
+
+        <div class="card-section">
+          <div class="section-line">
+            <h3>防御補正</h3>
+            <p>各補正の倍率を併記</p>
+          </div>
+          <div class="modifier-stack">
+            <label class="check-pill check-pill--detail check-pill--nowrap">
+              <input id="applySpreadPenalty" type="checkbox">
+              <span>範囲減衰(0.75x)</span>
+              <small>対象が全体なら威力3/4</small>
+            </label>
+            <label class="check-pill"><input id="reflect" type="checkbox"><span class="stack-label">リフレクター<br>(0.5/ダブル0.67)</span></label>
+            <label class="check-pill"><input id="lightScreen" type="checkbox"><span class="stack-label">ひかりのかべ<br>(0.5/ダブル0.67)</span></label>
+            <label class="check-pill"><input id="auroraVeil" type="checkbox"><span class="stack-label">オーロラベール<br>(0.5/ダブル0.67)</span></label>
+            <label class="check-pill"><input id="assaultVest" type="checkbox"><span>とつげきチョッキ(1.5x)</span></label>
+            <label class="check-pill"><input id="eviolite" type="checkbox"><span>しんかのきせき(1.5x)</span></label>
+            <label class="check-pill"><input id="resistBerry" type="checkbox"><span>半減きのみ(0.5x)</span></label>
+          </div>
+        </div>
+
+        <div class="card-section">
+          <div class="section-line">
+            <h3>防御側ステータス</h3>
+            <p>受け計算に必要な能力のみ表示</p>
+          </div>
+          <div class="stats-table-wrap compact-table">
+            <table class="stats-table">
+              <thead>
+                <tr>
+                  <th>能力</th>
+                  <th>種族値</th>
+                  <th>努力値</th>
+                  <th>性格</th>
+                  <th>実数値</th>
+                </tr>
+              </thead>
+              <tbody id="defenderStatRows"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="battle-card damage-card">
+        <div class="card-head">
+          <h2 class="scribble-title">Damage</h2>
+          <p class="card-subtitle">計算結果</p>
+        </div>
+
+        <div class="result-hero">
+          <p class="result-title">計算結果</p>
+          <p id="damageRange" class="result-range">-</p>
+          <div class="damage-bar">
+            <span id="damageBarFill" class="damage-bar-fill"></span>
+          </div>
+          <p class="result-line">
+            <span id="damagePercent">-</span>
+            <span id="koSummary">-</span>
+          </p>
+        </div>
+
+        <div class="card-section">
+          <div class="section-line">
+            <h3>サマリー</h3>
+          </div>
+          <div class="battle-summary-grid">
+            <div class="summary-box">
+              <span class="summary-box-label">Attacker</span>
+              <p id="battleSummaryAttacker">-</p>
+            </div>
+            <div class="summary-box">
+              <span class="summary-box-label">Move</span>
+              <p id="battleSummaryMove">-</p>
+            </div>
+            <div class="summary-box">
+              <span class="summary-box-label">Defender</span>
+              <p id="battleSummaryDefender">-</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-section">
+          <div class="section-line">
+            <h3>攻撃補正</h3>
+            <p>各補正の倍率を併記</p>
+          </div>
+          <div class="field-grid field-grid--compact modifier-context-grid">
+            <label class="field">
+              <span class="field-label">天候</span>
+              <select id="weather">
+                <option value="none">なし</option>
+                <option value="sun">晴れ</option>
+                <option value="rain">雨</option>
+                <option value="sand">砂嵐</option>
+                <option value="snow">雪</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">フィールド</span>
+              <select id="terrain">
+                <option value="none">なし</option>
+                <option value="electric">エレキ</option>
+                <option value="grassy">グラス</option>
+                <option value="psychic">サイコ</option>
+                <option value="misty">ミスト</option>
+              </select>
+            </label>
+            <label class="field field--check">
+              <span class="field-label">攻撃側地面</span>
+              <label class="check-pill">
+                <input id="attackerGrounded" type="checkbox" checked>
+                <span>地面にいる</span>
+              </label>
+            </label>
+            <label class="field field--check">
+              <span class="field-label">防御側地面</span>
+              <label class="check-pill">
+                <input id="defenderGrounded" type="checkbox" checked>
+                <span>地面にいる</span>
+              </label>
+            </label>
+          </div>
+          <div class="modifier-stack">
+            <label class="check-pill"><input id="helpingHand" type="checkbox"><span>てだすけ(1.5x)</span></label>
+            <label class="check-pill"><input id="allySteelySpirit" type="checkbox"><span class="stack-label">味方のはがねのせいしん<br>(はがね1.5x)</span></label>
+            <label class="check-pill"><input id="allyBattery" type="checkbox"><span class="stack-label">味方のバッテリー<br>(特殊1.3x)</span></label>
+            <label class="check-pill"><input id="allyPowerSpot" type="checkbox"><span class="stack-label">味方のパワースポット<br>(1.3x)</span></label>
+            <label class="check-pill"><input id="choiceBand" type="checkbox"><span>こだわりハチマキ(1.5x)</span></label>
+            <label class="check-pill"><input id="choiceSpecs" type="checkbox"><span>こだわりメガネ(1.5x)</span></label>
+            <label class="check-pill"><input id="lifeOrb" type="checkbox"><span>いのちのたま(1.3x)</span></label>
+            <label class="check-pill"><input id="expertBelt" type="checkbox"><span>たつじんのおび(1.2x)</span></label>
+            <label class="check-pill"><input id="muscleBand" type="checkbox"><span>ちからのハチマキ(1.1x)</span></label>
+            <label class="check-pill"><input id="wiseGlasses" type="checkbox"><span>ものしりメガネ(1.1x)</span></label>
+            <label class="check-pill"><input id="typeBoostItem" type="checkbox"><span>ジュエル(ノーマル1.3x)</span></label>
+          </div>
+        </div>
+
+        <div class="card-section">
+          <div class="section-line">
+            <h3>計算内訳</h3>
+          </div>
+          <dl class="result-metrics">
+            <div><dt>最終威力</dt><dd id="finalPowerValue">-</dd></div>
+            <div><dt>最終攻撃</dt><dd id="finalAttackValue">-</dd></div>
+            <div><dt>最終防御</dt><dd id="finalDefenseValue">-</dd></div>
+            <div><dt>タイプ相性</dt><dd id="typeEffectivenessValue">-</dd></div>
+            <div><dt>タイプ一致</dt><dd id="stabValue">-</dd></div>
+          </dl>
+          <p id="modifierSummary" class="modifier-note">-</p>
+        </div>
+
+      </section>
+    </section>
+
+    <datalist id="pokemonOptions"></datalist>
+    <datalist id="moveOptions"></datalist>
+  </main>
+
+  <footer class="site-credit" aria-label="クレジット表記">
+    <p class="asset-credit">
+      タイプアイコン:
+      <a href="https://www.deviantart.com/audreyeyeyeye/art/Pokemon-Type-Icons-FREE-TO-USE-909562921" target="_blank" rel="noreferrer">Pokemon Type Icons :: FREE TO USE / audreyeyeyeye on DeviantArt</a>
+    </p>
+    <p class="asset-credit">
+      PokeAPI:
+      <a href="https://pokeapi.co/" target="_blank" rel="noreferrer">https://pokeapi.co/</a>
+    </p>
+  </footer>
+
+  <script src="data/pokemon-data.js"></script>
+  <script src="data/move-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

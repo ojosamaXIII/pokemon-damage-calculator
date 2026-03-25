@@ -1,0 +1,8 @@
+.edge-check/
+.edge-profile*/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+Thumbs.db
