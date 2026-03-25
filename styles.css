@@ -84,6 +84,243 @@ button {
   color: #18140f;
   font-weight: 700;
 }
+
+.is-hidden {
+  display: none !important;
+}
+
+.app-shell {
+  width: min(100% - 40px, 1820px);
+  margin: 0 auto;
+  padding: 18px 0 0;
+}
+
+.app-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 18px;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: clamp(2.1rem, 1.7vw + 1.4rem, 3.1rem);
+  line-height: 1.08;
+}
+
+.section-tag {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.header-copy {
+  margin: 10px 0 0;
+  color: var(--muted);
+}
+
+.dataset-status {
+  margin: 0;
+  padding-top: 8px;
+  text-align: right;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.battle-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+  border: 1.4px solid rgba(238, 241, 245, 0.74);
+  border-radius: 28px;
+  padding: 16px 14px 14px;
+  box-shadow: var(--shadow);
+}
+
+.card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.scribble-title {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.2rem, 2vw + 1.2rem, 3.3rem);
+  line-height: 0.95;
+}
+
+.card-subtitle {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.identity-strip {
+  margin-bottom: 12px;
+}
+
+.pokemon-art-card {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.pokemon-art-frame {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+}
+
+.pokemon-art-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.pokemon-art-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.pokemon-art-role,
+.summary-box-label {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.pokemon-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 2px;
+}
+
+.pokemon-art-label {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.summary-line {
+  margin: 8px 0 0;
+  color: rgba(247, 245, 239, 0.88);
+  line-height: 1.45;
+}
+
+.type-icon-row,
+.type-icon-single {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.type-icon-row img,
+.type-icon-single img {
+  display: block;
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.type-icon-row--hero img {
+  width: 34px;
+  height: 34px;
+}
+
+.type-icon-single {
+  min-width: 34px;
+  min-height: 34px;
+  justify-content: center;
+}
+
+.card-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.field-label {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.field--full {
+  grid-column: 1 / -1;
+}
+
+.input-action-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 88px;
+  gap: 10px;
+  align-items: end;
+}
+
+.ability-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.field-grid,
+.field-grid--compact,
+.modifier-stack,
+.battle-summary-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.field-grid--compact {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: end;
+}
+
+.move-summary-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 10px;
+}
+
+.field--check {
+  justify-content: flex-end;
+}
 .status-line {
   min-height: 1.2em;
   font-size: 0.82rem;
