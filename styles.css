@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --bg-top: #131416;
   --bg-bottom: #050607;
   --panel: #101214;
@@ -548,6 +548,17 @@ button {
   padding: 0 8px;
 }
 
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
 .effort-input-group {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 22px;
@@ -825,3 +836,4 @@ button {
     grid-column: auto;
   }
 }
+
