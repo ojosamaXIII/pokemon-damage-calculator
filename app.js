@@ -1,4 +1,4 @@
-﻿const TYPE_ORDER=["ノーマル","ほのお","みず","でんき","くさ","こおり","かくとう","どく","じめん","ひこう","エスパー","むし","いわ","ゴースト","ドラゴン","あく","はがね","フェアリー"];
+const TYPE_ORDER=["ノーマル","ほのお","みず","でんき","くさ","こおり","かくとう","どく","じめん","ひこう","エスパー","むし","いわ","ゴースト","ドラゴン","あく","はがね","フェアリー"];
 const TYPE_CHART={ノーマル:{いわ:0.5,ゴースト:0,はがね:0.5},ほのお:{ほのお:0.5,みず:0.5,くさ:2,こおり:2,むし:2,いわ:0.5,ドラゴン:0.5,はがね:2},みず:{ほのお:2,みず:0.5,くさ:0.5,じめん:2,いわ:2,ドラゴン:0.5},でんき:{みず:2,でんき:0.5,くさ:0.5,じめん:0,ひこう:2,ドラゴン:0.5},くさ:{ほのお:0.5,みず:2,くさ:0.5,どく:0.5,じめん:2,ひこう:0.5,むし:0.5,いわ:2,ドラゴン:0.5,はがね:0.5},こおり:{ほのお:0.5,みず:0.5,くさ:2,こおり:0.5,じめん:2,ひこう:2,ドラゴン:2,はがね:0.5},かくとう:{ノーマル:2,こおり:2,どく:0.5,ひこう:0.5,エスパー:0.5,むし:0.5,いわ:2,ゴースト:0,あく:2,はがね:2,フェアリー:0.5},どく:{くさ:2,どく:0.5,じめん:0.5,いわ:0.5,ゴースト:0.5,はがね:0,フェアリー:2},じめん:{ほのお:2,でんき:2,くさ:0.5,どく:2,ひこう:0,むし:0.5,いわ:2,はがね:2},ひこう:{でんき:0.5,くさ:2,かくとう:2,むし:2,いわ:0.5,はがね:0.5},エスパー:{かくとう:2,どく:2,エスパー:0.5,あく:0,はがね:0.5},むし:{ほのお:0.5,くさ:2,かくとう:0.5,どく:0.5,ひこう:0.5,エスパー:2,ゴースト:0.5,あく:2,はがね:0.5,フェアリー:0.5},いわ:{ほのお:2,こおり:2,かくとう:0.5,じめん:0.5,ひこう:2,むし:2,はがね:0.5},ゴースト:{ノーマル:0,エスパー:2,ゴースト:2,あく:0.5},ドラゴン:{ドラゴン:2,はがね:0.5,フェアリー:0},あく:{かくとう:0.5,エスパー:2,ゴースト:2,あく:0.5,フェアリー:0.5},はがね:{ほのお:0.5,みず:0.5,でんき:0.5,こおり:2,いわ:2,はがね:0.5,フェアリー:2},フェアリー:{ほのお:0.5,かくとう:2,どく:0.5,ドラゴン:2,あく:2,はがね:0.5}};
 const TARGET_ORDER=["1匹選択","選択した相手","相手全体","全体","自分以外","相手の場","味方の場","自分の場","ランダム1体","自分"];
 const STATS=[{key:"hp",label:"HP",nature:false},{key:"atk",label:"攻撃",nature:true},{key:"def",label:"防御",nature:true},{key:"spa",label:"特攻",nature:true},{key:"spd",label:"特防",nature:true},{key:"spe",label:"素早",nature:true}];
@@ -8,6 +8,15 @@ const dataStore={pokemonEntries:[],moveEntries:[],pokemonLookup:new Map(),moveLo
 const byId=(id)=>document.getElementById(id);
 const sanitizeNumber=(value,fallback=0)=>{const n=Number(value);return Number.isFinite(n)?n:fallback;};
 const clampNumber=(value,min,max)=>Math.min(max,Math.max(min,value));
+const FIXED_MOD_BASE=4096;
+const FIXED_MODS={NEUTRAL:4096,HALF:2048,SCREEN_DOUBLE:2732,THREE_QUARTERS:3072,TENTH_BOOST:4506,FIFTH_BOOST:4915,QUARTER_BOOST:5120,THIRD_BOOST:5325,FOUR_THIRDS:5461,AURA_BOOST:5448,ONE_HALF:6144,DOUBLE:8192};
+const FIXED_MOD_TABLE=[[0.5,FIXED_MODS.HALF],[2/3,FIXED_MODS.SCREEN_DOUBLE],[0.75,FIXED_MODS.THREE_QUARTERS],[1,FIXED_MODS.NEUTRAL],[1.1,FIXED_MODS.TENTH_BOOST],[1.2,FIXED_MODS.FIFTH_BOOST],[1.25,FIXED_MODS.QUARTER_BOOST],[1.3,FIXED_MODS.THIRD_BOOST],[4/3,FIXED_MODS.FOUR_THIRDS],[1.5,FIXED_MODS.ONE_HALF],[2,FIXED_MODS.DOUBLE]];
+function fixedModFromMultiplier(multiplier){const match=FIXED_MOD_TABLE.find(([value])=>Math.abs(value-multiplier)<1e-9);return match?match[1]:Math.round(multiplier*FIXED_MOD_BASE);}
+function roundHalfUpDiv(numerator,denominator=FIXED_MOD_BASE){return Math.floor((numerator+Math.floor(denominator/2))/denominator);}
+function roundHalfDownDiv(numerator,denominator=FIXED_MOD_BASE){const quotient=Math.floor(numerator/denominator);const remainder=numerator%denominator;return quotient+(remainder>denominator/2?1:0);}
+function chainFixedMod(current,next){return roundHalfUpDiv(current*next);}
+function applyFixedMod(value,mod,mode="halfDown"){const numerator=value*mod;if(mode==="floor")return Math.floor(numerator/FIXED_MOD_BASE);if(mode==="halfUp")return roundHalfUpDiv(numerator);return roundHalfDownDiv(numerator);}
+function formatFixedMod(mod){return formatMultiplier(mod/FIXED_MOD_BASE);}
 function isBlockedHost(){return window.location.protocol==="http:"&&(window.location.hostname==="localhost"||window.location.hostname==="127.0.0.1")&&window.location.port==="8000";}
 function renderBlockedHostMessage(){document.body.classList.add("host-blocked");const block=byId("hostBlockMessage");if(!block)return;block.classList.remove("is-hidden");block.innerHTML=`<div class="host-block-card"><p class="section-tag">Blocked Host</p><h1>このアドレスでは開けません</h1><p>ローカルファイルか、別ポートのローカルサーバーから開いてください。</p></div>`;}
 function escapeHtml(value){return String(value).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");}
@@ -45,8 +54,8 @@ function getStats(side){const result={};STATS.forEach((stat)=>{const actual=byId
 function applyStage(stat,stage){const s=sanitizeNumber(stage,0);return s>=0?Math.floor((stat*(2+s))/2):Math.floor((stat*2)/(2-s));}
 function getTypeEffectiveness(moveType,defenderTypes){if(!moveType)return 1;return defenderTypes.reduce((multiplier,type)=>multiplier*(((TYPE_CHART[moveType]||{})[type])??1),1);}
 function isAbilityActive(side,apiName){return byId(`${side}AbilityEnabled`)?.checked&&getSelectedAbility(side)?.apiName===apiName;}
-function getStabModifier(moveType){const attackerTypes=[byId("attackerType1").value,byId("attackerType2").value].filter(Boolean);if(!moveType||!attackerTypes.includes(moveType))return 1;return isAbilityActive("attacker","adaptability")?2:1.5;}
-function getWeatherModifier(moveType){const weather=getActiveWeather();if(weather==="sun"){if(moveType==="ほのお")return 1.5;if(moveType==="みず")return 0.5;}if(weather==="rain"){if(moveType==="みず")return 1.5;if(moveType==="ほのお")return 0.5;}return 1;}
+function getStabModifier(moveType){const attackerTypes=[byId("attackerType1").value,byId("attackerType2").value].filter(Boolean);if(!moveType||!attackerTypes.includes(moveType))return FIXED_MODS.NEUTRAL;return isAbilityActive("attacker","adaptability")?FIXED_MODS.DOUBLE:FIXED_MODS.ONE_HALF;}
+function getWeatherModifier(moveType){const weather=getActiveWeather();if(weather==="sun"){if(moveType==="ほのお")return FIXED_MODS.ONE_HALF;if(moveType==="みず")return FIXED_MODS.HALF;}if(weather==="rain"){if(moveType==="みず")return FIXED_MODS.ONE_HALF;if(moveType==="ほのお")return FIXED_MODS.HALF;}return FIXED_MODS.NEUTRAL;}
 function isSpreadTarget(target){return /全体|自分以外|相手全体|ランダム1体/.test(target||"");}
 function syncAbilityDerivedModifiers(){const attackerEnabled=byId("attackerAbilityEnabled"),defenderEnabled=byId("defenderAbilityEnabled");if(attackerEnabled&&!byId("attackerAbility").value)attackerEnabled.checked=false;if(defenderEnabled&&!byId("defenderAbility").value)defenderEnabled.checked=false;const attackerAbility=getSelectedAbility("attacker")?.apiName||"";const defenderAbility=getSelectedAbility("defender")?.apiName||"";const supremeField=byId("supremeOverlordField");if(supremeField)supremeField.classList.toggle("is-hidden",attackerAbility!=="supreme-overlord");const defenderStateField=byId("defenderAbilityStateField");const defenderStatusedField=byId("defenderStatusedField");const defenderFullHpField=byId("defenderFullHpField");const showStatused=defenderAbility==="marvel-scale";const showFullHp=["shadow-shield","multiscale"].includes(defenderAbility);if(defenderStatusedField)defenderStatusedField.classList.toggle("is-hidden",!showStatused);if(defenderFullHpField)defenderFullHpField.classList.toggle("is-hidden",!showFullHp);if(defenderStateField)defenderStateField.classList.toggle("is-hidden",!(showStatused||showFullHp));}
 const SOUND_MOVE_APIS=new Set(["growl","roar","sing","supersonic","screech","snore","uproar","hyper-voice","metal-sound","grass-whistle","bug-buzz","chatter","perish-song","heal-bell","round","echoed-voice","relic-song","noble-roar","disarming-voice","boomburst","confide","snarl","sparkling-aria","clangorous-soulblaze","clanging-scales","overdrive","torch-song","alluring-voice","psychic-noise"]);
@@ -79,6 +88,7 @@ function isWeatherSuppressed(){return ["attacker","defender"].some((side)=>{cons
 function getActiveWeather(){return isWeatherSuppressed()?"none":byId("weather").value;}
 function areItemsSuppressed(side){return isAbilityActive(side,"klutz");}
 function getSupremeOverlordMultiplier(){return clampNumber(sanitizeNumber(byId("supremeOverlordMultiplier")?.value,1),1,1.5);}
+function getSupremeOverlordMod(){return fixedModFromMultiplier(getSupremeOverlordMultiplier());}
 function moveHasSecondaryEffect(moveEntry){if(!moveEntry)return false;const meta=moveEntry.meta||{};return Boolean((moveEntry.effectChance||0)>0||(meta.flinchChance||0)>0||(meta.statChance||0)>0||(meta.ailmentChance||0)>0);}
 function moveHasRecoilOrCrash(moveEntry){if(!moveEntry)return false;return (moveEntry.meta?.drain||0)<0||CRASH_MOVE_APIS.has(moveEntry.apiName);}
 function getMoveHitRange(moveEntry){if(!moveEntry)return null;const minHits=moveEntry.meta?.minHits,maxHits=moveEntry.meta?.maxHits;if(Number.isFinite(minHits)&&Number.isFinite(maxHits)&&maxHits>1)return{min:minHits,max:maxHits};if(moveEntry.apiName==="population-bomb")return{min:1,max:10};return null;}
@@ -151,130 +161,130 @@ function getSelectedVariablePower(moveEntry){
   if(!moveEntry||!DIRECT_POWER_INPUT_MOVE_APIS.has(moveEntry.apiName))return null;
   return clampNumber(Math.round(sanitizeNumber(byId("moveVariablePower")?.value,getVariablePowerDefault(moveEntry))),1,300);
 }
-function getAuraModifier(moveType){const hasDarkAura=["attacker","defender"].some((side)=>isAbilityActive(side,"dark-aura"));const hasFairyAura=["attacker","defender"].some((side)=>isAbilityActive(side,"fairy-aura"));const hasAuraBreak=["attacker","defender"].some((side)=>isAbilityActive(side,"aura-break"));if(moveType==="あく"&&hasDarkAura)return{multiplier:hasAuraBreak?0.75:4/3,label:hasAuraBreak?"オーラブレイク":"ダークオーラ"};if(moveType==="フェアリー"&&hasFairyAura)return{multiplier:hasAuraBreak?0.75:4/3,label:hasAuraBreak?"オーラブレイク":"フェアリーオーラ"};return{multiplier:1,label:""};}
-function applySkinAbility(context,ability){const convertedTypeMap={aerilate:"ひこう",pixilate:"フェアリー",refrigerate:"こおり",galvanize:"でんき"};const nextType=convertedTypeMap[ability];if(!nextType||context.originalMoveType!=="ノーマル"||context.movePower<=0)return context;context.moveType=nextType;context.powerMultiplier*=1.2;context.modifierLabels.push(getSelectedAbility("attacker")?.nameJa||"スキン");return context;}
-function applyRuinAbilityModifiers(context){if(isAbilityActive("attacker","sword-of-ruin")&&context.isPhysical){context.defenseMultiplier*=0.75;context.modifierLabels.push("わざわいのつるぎ");}if(isAbilityActive("attacker","beads-of-ruin")&&!context.isPhysical){context.defenseMultiplier*=0.75;context.modifierLabels.push("わざわいのたま");}if(isAbilityActive("defender","tablets-of-ruin")&&context.isPhysical){context.attackMultiplier*=0.75;context.modifierLabels.push("わざわいのおふだ");}if(isAbilityActive("defender","vessel-of-ruin")&&!context.isPhysical){context.attackMultiplier*=0.75;context.modifierLabels.push("わざわいのうつわ");}return context;}
+function getAuraModifier(moveType){const hasDarkAura=["attacker","defender"].some((side)=>isAbilityActive(side,"dark-aura"));const hasFairyAura=["attacker","defender"].some((side)=>isAbilityActive(side,"fairy-aura"));const hasAuraBreak=["attacker","defender"].some((side)=>isAbilityActive(side,"aura-break"));if(moveType==="あく"&&hasDarkAura)return{modifier:hasAuraBreak?FIXED_MODS.THREE_QUARTERS:FIXED_MODS.FOUR_THIRDS,label:hasAuraBreak?"オーラブレイク":"ダークオーラ"};if(moveType==="フェアリー"&&hasFairyAura)return{modifier:hasAuraBreak?FIXED_MODS.THREE_QUARTERS:FIXED_MODS.FOUR_THIRDS,label:hasAuraBreak?"オーラブレイク":"フェアリーオーラ"};return{modifier:FIXED_MODS.NEUTRAL,label:""};}
+function applySkinAbility(context,ability){const convertedTypeMap={aerilate:"ひこう",pixilate:"フェアリー",refrigerate:"こおり",galvanize:"でんき"};const nextType=convertedTypeMap[ability];if(!nextType||context.originalMoveType!=="ノーマル"||context.movePower<=0)return context;context.moveType=nextType;context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.FIFTH_BOOST);context.modifierLabels.push(getSelectedAbility("attacker")?.nameJa||"スキン");return context;}
+function applyRuinAbilityModifiers(context){if(isAbilityActive("attacker","sword-of-ruin")&&context.isPhysical){context.defenseMultiplier=chainFixedMod(context.defenseMultiplier,FIXED_MODS.THREE_QUARTERS);context.modifierLabels.push("わざわいのつるぎ");}if(isAbilityActive("attacker","beads-of-ruin")&&!context.isPhysical){context.defenseMultiplier=chainFixedMod(context.defenseMultiplier,FIXED_MODS.THREE_QUARTERS);context.modifierLabels.push("わざわいのたま");}if(isAbilityActive("defender","tablets-of-ruin")&&context.isPhysical){context.attackMultiplier=chainFixedMod(context.attackMultiplier,FIXED_MODS.THREE_QUARTERS);context.modifierLabels.push("わざわいのおふだ");}if(isAbilityActive("defender","vessel-of-ruin")&&!context.isPhysical){context.attackMultiplier=chainFixedMod(context.attackMultiplier,FIXED_MODS.THREE_QUARTERS);context.modifierLabels.push("わざわいのうつわ");}return context;}
 function applyAttackerAbilityModifiers(context){
   const ability=getSelectedAbility("attacker")?.apiName||"";
   if(!byId("attackerAbilityEnabled")?.checked||!ability)return context;
   applySkinAbility(context,ability);
   switch(ability){
     case "analytic":
-      context.powerMultiplier*=1.3;
+      context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.THIRD_BOOST);
       context.modifierLabels.push("アナライズ");
       break;
     case "blaze":
-      if(context.moveType==="ほのお"){context.powerMultiplier*=1.5;context.modifierLabels.push("もうか");}
+      if(context.moveType==="ほのお"){context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.ONE_HALF);context.modifierLabels.push("もうか");}
       break;
     case "torrent":
-      if(context.moveType==="みず"){context.powerMultiplier*=1.5;context.modifierLabels.push("げきりゅう");}
+      if(context.moveType==="みず"){context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.ONE_HALF);context.modifierLabels.push("げきりゅう");}
       break;
     case "overgrow":
-      if(context.moveType==="くさ"){context.powerMultiplier*=1.5;context.modifierLabels.push("しんりょく");}
+      if(context.moveType==="くさ"){context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.ONE_HALF);context.modifierLabels.push("しんりょく");}
       break;
     case "swarm":
-      if(context.moveType==="むし"){context.powerMultiplier*=1.5;context.modifierLabels.push("むしのしらせ");}
+      if(context.moveType==="むし"){context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.ONE_HALF);context.modifierLabels.push("むしのしらせ");}
       break;
     case "flash-fire":
-      if(context.moveType==="ほのお"){context.powerMultiplier*=1.5;context.modifierLabels.push("もらいび");}
+      if(context.moveType==="ほのお"){context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.ONE_HALF);context.modifierLabels.push("もらいび");}
       break;
     case "steelworker":
-      if(context.moveType==="はがね"){context.powerMultiplier*=1.5;context.modifierLabels.push("はがねつかい");}
+      if(context.moveType==="はがね"){context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.ONE_HALF);context.modifierLabels.push("はがねつかい");}
       break;
     case "steely-spirit":
-      if(context.moveType==="はがね"){context.powerMultiplier*=1.5;context.modifierLabels.push("はがねのせいしん");}
+      if(context.moveType==="はがね"){context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.ONE_HALF);context.modifierLabels.push("はがねのせいしん");}
       break;
     case "rocky-payload":
-      if(context.moveType==="いわ"){context.powerMultiplier*=1.5;context.modifierLabels.push("いわはこび");}
+      if(context.moveType==="いわ"){context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.ONE_HALF);context.modifierLabels.push("いわはこび");}
       break;
     case "technician":
-      if(context.movePower<=60){context.powerMultiplier*=1.5;context.modifierLabels.push("テクニシャン");}
+      if(context.movePower<=60){context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.ONE_HALF);context.modifierLabels.push("テクニシャン");}
       break;
     case "sand-force":
-      if(getActiveWeather()==="sand"&&["じめん","いわ","はがね"].includes(context.moveType)){context.powerMultiplier*=1.3;context.modifierLabels.push("すなのちから");}
+      if(getActiveWeather()==="sand"&&["じめん","いわ","はがね"].includes(context.moveType)){context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.THIRD_BOOST);context.modifierLabels.push("すなのちから");}
       break;
     case "guts":
-      if(context.isPhysical&&hasAnyStatusAilment()){context.attackMultiplier*=1.5;context.modifierLabels.push("こんじょう");}
+      if(context.isPhysical&&hasAnyStatusAilment()){context.attackMultiplier=chainFixedMod(context.attackMultiplier,FIXED_MODS.ONE_HALF);context.modifierLabels.push("こんじょう");}
       break;
     case "toxic-boost":
-      if(context.isPhysical&&byId("hasPoison").checked){context.attackMultiplier*=1.5;context.modifierLabels.push("どくぼうそう");}
+      if(context.isPhysical&&byId("hasPoison").checked){context.attackMultiplier=chainFixedMod(context.attackMultiplier,FIXED_MODS.ONE_HALF);context.modifierLabels.push("どくぼうそう");}
       break;
     case "flare-boost":
-      if(!context.isPhysical&&byId("isBurned").checked){context.attackMultiplier*=1.5;context.modifierLabels.push("ねつぼうそう");}
+      if(!context.isPhysical&&byId("isBurned").checked){context.attackMultiplier=chainFixedMod(context.attackMultiplier,FIXED_MODS.ONE_HALF);context.modifierLabels.push("ねつぼうそう");}
       break;
     case "solar-power":
-      if(!context.isPhysical&&getActiveWeather()==="sun"){context.attackMultiplier*=1.5;context.modifierLabels.push("サンパワー");}
+      if(!context.isPhysical&&getActiveWeather()==="sun"){context.attackMultiplier=chainFixedMod(context.attackMultiplier,FIXED_MODS.ONE_HALF);context.modifierLabels.push("サンパワー");}
       break;
     case "hustle":
-      if(context.isPhysical){context.attackMultiplier*=1.5;context.modifierLabels.push("はりきり");}
+      if(context.isPhysical){context.attackMultiplier=chainFixedMod(context.attackMultiplier,FIXED_MODS.ONE_HALF);context.modifierLabels.push("はりきり");}
       break;
     case "huge-power":
     case "pure-power":
-      if(context.isPhysical){context.attackMultiplier*=2;context.modifierLabels.push(ability==="huge-power"?"ちからもち":"ヨガパワー");}
+      if(context.isPhysical){context.attackMultiplier=chainFixedMod(context.attackMultiplier,FIXED_MODS.DOUBLE);context.modifierLabels.push(ability==="huge-power"?"ちからもち":"ヨガパワー");}
       break;
     case "parental-bond":
-      context.finalDamageMultiplier*=1.25;
+      context.finalDamageMultiplier=chainFixedMod(context.finalDamageMultiplier,FIXED_MODS.QUARTER_BOOST);
       context.modifierLabels.push("おやこあい");
       break;
     case "tough-claws":
-      if(moveMakesContact(context.moveEntry)){context.powerMultiplier*=1.3;context.modifierLabels.push("かたいツメ");}
+      if(moveMakesContact(context.moveEntry)){context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.THIRD_BOOST);context.modifierLabels.push("かたいツメ");}
       break;
     case "strong-jaw":
-      if(moveIsBite(context.moveEntry)){context.powerMultiplier*=1.5;context.modifierLabels.push("がんじょうあご");}
+      if(moveIsBite(context.moveEntry)){context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.ONE_HALF);context.modifierLabels.push("がんじょうあご");}
       break;
     case "sharpness":
-      if(moveIsSlicing(context.moveEntry)){context.powerMultiplier*=1.5;context.modifierLabels.push("きれあじ");}
+      if(moveIsSlicing(context.moveEntry)){context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.ONE_HALF);context.modifierLabels.push("きれあじ");}
       break;
     case "quark-drive":
-      context.attackMultiplier*=1.3;
+      context.attackMultiplier=chainFixedMod(context.attackMultiplier,FIXED_MODS.THIRD_BOOST);
       context.modifierLabels.push("クォークチャージ");
       break;
     case "protosynthesis":
-      context.attackMultiplier*=1.3;
+      context.attackMultiplier=chainFixedMod(context.attackMultiplier,FIXED_MODS.THIRD_BOOST);
       context.modifierLabels.push("こだいかっせい");
       break;
     case "gorilla-tactics":
-      if(context.isPhysical){context.attackMultiplier*=1.5;context.modifierLabels.push("ごりむちゅう");}
+      if(context.isPhysical){context.attackMultiplier=chainFixedMod(context.attackMultiplier,FIXED_MODS.ONE_HALF);context.modifierLabels.push("ごりむちゅう");}
       break;
     case "water-bubble":
-      if(context.moveType==="みず"){context.powerMultiplier*=2;context.modifierLabels.push("すいほう");}
+      if(context.moveType==="みず"){context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.DOUBLE);context.modifierLabels.push("すいほう");}
       break;
     case "reckless":
-      if(moveHasRecoilOrCrash(context.moveEntry)){context.powerMultiplier*=1.2;context.modifierLabels.push("すてみ");}
+      if(moveHasRecoilOrCrash(context.moveEntry)){context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.FIFTH_BOOST);context.modifierLabels.push("すてみ");}
       break;
     case "supreme-overlord": {
       const multiplier=getSupremeOverlordMultiplier();
-      if(multiplier>1){context.finalDamageMultiplier*=multiplier;context.modifierLabels.push(`そうだいしょう ${formatMultiplier(multiplier)}`);}
+      if(multiplier>1){context.finalDamageMultiplier=chainFixedMod(context.finalDamageMultiplier,getSupremeOverlordMod());context.modifierLabels.push(`そうだいしょう ${formatMultiplier(multiplier)}`);}
       break;
     }
     case "sheer-force":
-      if(moveHasSecondaryEffect(context.moveEntry)){context.powerMultiplier*=1.3;context.modifierLabels.push("ちからずく");}
+      if(moveHasSecondaryEffect(context.moveEntry)){context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.THIRD_BOOST);context.modifierLabels.push("ちからずく");}
       break;
     case "iron-fist":
-      if(moveIsPunch(context.moveEntry)){context.powerMultiplier*=1.2;context.modifierLabels.push("てつのこぶし");}
+      if(moveIsPunch(context.moveEntry)){context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.FIFTH_BOOST);context.modifierLabels.push("てつのこぶし");}
       break;
     case "rivalry":
-      context.finalDamageMultiplier*=1.25;
+      context.finalDamageMultiplier=chainFixedMod(context.finalDamageMultiplier,FIXED_MODS.QUARTER_BOOST);
       context.modifierLabels.push("とうそうしん");
       break;
     case "transistor":
-      if(context.moveType==="でんき"){context.powerMultiplier*=1.3;context.modifierLabels.push("トランジスタ");}
+      if(context.moveType==="でんき"){context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.THIRD_BOOST);context.modifierLabels.push("トランジスタ");}
       break;
     case "hadron-engine":
-      if(!context.isPhysical){context.attackMultiplier*=4/3;context.modifierLabels.push("ハドロンエンジン");}
+      if(!context.isPhysical){context.attackMultiplier=chainFixedMod(context.attackMultiplier,FIXED_MODS.FOUR_THIRDS);context.modifierLabels.push("ハドロンエンジン");}
       break;
     case "orichalcum-pulse":
-      if(context.isPhysical){context.attackMultiplier*=4/3;context.modifierLabels.push("ひひいろのこどう");}
+      if(context.isPhysical){context.attackMultiplier=chainFixedMod(context.attackMultiplier,FIXED_MODS.FOUR_THIRDS);context.modifierLabels.push("ひひいろのこどう");}
       break;
     case "punk-rock":
-      if(moveIsSound(context.moveEntry)){context.powerMultiplier*=1.3;context.modifierLabels.push("パンクロック");}
+      if(moveIsSound(context.moveEntry)){context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.THIRD_BOOST);context.modifierLabels.push("パンクロック");}
       break;
     case "plus":
     case "minus":
-      if(!context.isPhysical){context.attackMultiplier*=1.5;context.modifierLabels.push(ability==="plus"?"プラス":"マイナス");}
+      if(!context.isPhysical){context.attackMultiplier=chainFixedMod(context.attackMultiplier,FIXED_MODS.ONE_HALF);context.modifierLabels.push(ability==="plus"?"プラス":"マイナス");}
       break;
     case "mega-launcher":
-      if(moveIsPulse(context.moveEntry)){context.powerMultiplier*=1.5;context.modifierLabels.push("メガランチャー");}
+      if(moveIsPulse(context.moveEntry)){context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.ONE_HALF);context.modifierLabels.push("メガランチャー");}
       break;
     case "mold-breaker":
     case "teravolt":
@@ -283,11 +293,11 @@ function applyAttackerAbilityModifiers(context){
       context.modifierLabels.push(getSelectedAbility("attacker")?.nameJa||"かたやぶり系");
       break;
     case "defeatist":
-      context.attackMultiplier*=0.5;
+      context.attackMultiplier=chainFixedMod(context.attackMultiplier,FIXED_MODS.HALF);
       context.modifierLabels.push("よわき");
       break;
     case "dragons-maw":
-      if(context.moveType==="ドラゴン"){context.powerMultiplier*=1.5;context.modifierLabels.push("りゅうのあぎと");}
+      if(context.moveType==="ドラゴン"){context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.ONE_HALF);context.modifierLabels.push("りゅうのあぎと");}
       break;
     default:
       break;
@@ -298,7 +308,7 @@ function applyAttackerPostTypeModifiers(context){
   const ability=getSelectedAbility("attacker")?.apiName||"";
   if(!byId("attackerAbilityEnabled")?.checked||!ability)return context;
   if(ability==="tinted-lens"&&context.typeEffectiveness>0&&context.typeEffectiveness<1){context.typeEffectiveness*=2;context.modifierLabels.push("いろめがね");}
-  if(ability==="brain-force"&&context.typeEffectiveness>1){context.finalDamageMultiplier*=1.25;context.modifierLabels.push("ブレインフォース");}
+  if(ability==="brain-force"&&context.typeEffectiveness>1){context.finalDamageMultiplier=chainFixedMod(context.finalDamageMultiplier,FIXED_MODS.QUARTER_BOOST);context.modifierLabels.push("ブレインフォース");}
   return context;
 }
 function applyDefenderAbilityModifiers(context){
@@ -331,7 +341,7 @@ function applyDefenderAbilityModifiers(context){
       break;
     case "dry-skin":
       if(context.moveType==="みず"){context.typeEffectiveness=0;context.modifierLabels.push("かんそうはだ");}
-      else if(context.moveType==="ほのお"){context.finalDamageMultiplier*=1.25;context.modifierLabels.push("かんそうはだ");}
+      else if(context.moveType==="ほのお"){context.finalDamageMultiplier=chainFixedMod(context.finalDamageMultiplier,FIXED_MODS.QUARTER_BOOST);context.modifierLabels.push("かんそうはだ");}
       break;
     case "earth-eater":
       if(context.moveType==="じめん"){context.typeEffectiveness=0;context.modifierLabels.push("どしょく");}
@@ -340,19 +350,19 @@ function applyDefenderAbilityModifiers(context){
       if(context.moveType==="ほのお"){context.typeEffectiveness=0;context.modifierLabels.push("こんがりボディ");}
       break;
     case "thick-fat":
-      if(context.moveType==="ほのお"||context.moveType==="こおり"){context.finalDamageMultiplier*=0.5;context.modifierLabels.push("あついしぼう");}
+      if(context.moveType==="ほのお"||context.moveType==="こおり"){context.finalDamageMultiplier=chainFixedMod(context.finalDamageMultiplier,FIXED_MODS.HALF);context.modifierLabels.push("あついしぼう");}
       break;
     case "heatproof":
-      if(context.moveType==="ほのお"){context.finalDamageMultiplier*=0.5;context.modifierLabels.push("たいねつ");}
+      if(context.moveType==="ほのお"){context.finalDamageMultiplier=chainFixedMod(context.finalDamageMultiplier,FIXED_MODS.HALF);context.modifierLabels.push("たいねつ");}
       break;
     case "water-bubble":
-      if(context.moveType==="ほのお"){context.finalDamageMultiplier*=0.5;context.modifierLabels.push("すいほう");}
+      if(context.moveType==="ほのお"){context.finalDamageMultiplier=chainFixedMod(context.finalDamageMultiplier,FIXED_MODS.HALF);context.modifierLabels.push("すいほう");}
       break;
     case "fur-coat":
-      if(context.isPhysical){context.defenseMultiplier*=2;context.modifierLabels.push("ファーコート");}
+      if(context.isPhysical){context.defenseMultiplier=chainFixedMod(context.defenseMultiplier,FIXED_MODS.DOUBLE);context.modifierLabels.push("ファーコート");}
       break;
     case "ice-scales":
-      if(!context.isPhysical){context.finalDamageMultiplier*=0.5;context.modifierLabels.push("こおりのりんぷん");}
+      if(!context.isPhysical){context.finalDamageMultiplier=chainFixedMod(context.finalDamageMultiplier,FIXED_MODS.HALF);context.modifierLabels.push("こおりのりんぷん");}
       break;
     case "soundproof":
       if(moveIsSound(context.moveEntry)){context.typeEffectiveness=0;context.modifierLabels.push("ぼうおん");}
@@ -364,33 +374,33 @@ function applyDefenderAbilityModifiers(context){
       if(moveIsPowder(context.moveEntry)){context.typeEffectiveness=0;context.modifierLabels.push("ぼうじん");}
       break;
     case "marvel-scale":
-      if(defenderHasStatusAilment()&&context.isPhysical){context.defenseMultiplier*=1.5;context.modifierLabels.push("ふしぎなうろこ");}
+      if(defenderHasStatusAilment()&&context.isPhysical){context.defenseMultiplier=chainFixedMod(context.defenseMultiplier,FIXED_MODS.ONE_HALF);context.modifierLabels.push("ふしぎなうろこ");}
       break;
     case "grass-pelt":
-      if(byId("terrain").value==="grassy"&&context.isPhysical){context.defenseMultiplier*=1.5;context.modifierLabels.push("くさのけがわ");}
+      if(byId("terrain").value==="grassy"&&context.isPhysical){context.defenseMultiplier=chainFixedMod(context.defenseMultiplier,FIXED_MODS.ONE_HALF);context.modifierLabels.push("くさのけがわ");}
       break;
     case "shadow-shield":
     case "multiscale":
-      if(defenderIsAtFullHp()){if((context.hitCount||1)>1)context.firstHitOnlyFinalDamageMultiplier*=0.5;else context.finalDamageMultiplier*=0.5;context.modifierLabels.push(ability==="shadow-shield"?"ファントムガード":"マルチスケイル");}
+      if(defenderIsAtFullHp()){if((context.hitCount||1)>1)context.firstHitOnlyFinalDamageMultiplier=chainFixedMod(context.firstHitOnlyFinalDamageMultiplier,FIXED_MODS.HALF);else context.finalDamageMultiplier=chainFixedMod(context.finalDamageMultiplier,FIXED_MODS.HALF);context.modifierLabels.push(ability==="shadow-shield"?"ファントムガード":"マルチスケイル");}
       break;
     case "fluffy":
-      if(context.moveType==="ほのお"){context.finalDamageMultiplier*=2;context.modifierLabels.push("もふもふ");}
-      else if(context.isPhysical&&moveMakesContact(context.moveEntry)){context.finalDamageMultiplier*=0.5;context.modifierLabels.push("もふもふ");}
+      if(context.moveType==="ほのお"){context.finalDamageMultiplier=chainFixedMod(context.finalDamageMultiplier,FIXED_MODS.DOUBLE);context.modifierLabels.push("もふもふ");}
+      else if(context.isPhysical&&moveMakesContact(context.moveEntry)){context.finalDamageMultiplier=chainFixedMod(context.finalDamageMultiplier,FIXED_MODS.HALF);context.modifierLabels.push("もふもふ");}
       break;
     case "filter":
-      if(context.typeEffectiveness>1){context.finalDamageMultiplier*=0.75;context.modifierLabels.push("フィルター");}
+      if(context.typeEffectiveness>1){context.finalDamageMultiplier=chainFixedMod(context.finalDamageMultiplier,FIXED_MODS.THREE_QUARTERS);context.modifierLabels.push("フィルター");}
       break;
     case "solid-rock":
-      if(context.typeEffectiveness>1){context.finalDamageMultiplier*=0.75;context.modifierLabels.push("ハードロック");}
+      if(context.typeEffectiveness>1){context.finalDamageMultiplier=chainFixedMod(context.finalDamageMultiplier,FIXED_MODS.THREE_QUARTERS);context.modifierLabels.push("ハードロック");}
       break;
     case "prism-armor":
-      if(context.typeEffectiveness>1){context.finalDamageMultiplier*=0.75;context.modifierLabels.push("プリズムアーマー");}
+      if(context.typeEffectiveness>1){context.finalDamageMultiplier=chainFixedMod(context.finalDamageMultiplier,FIXED_MODS.THREE_QUARTERS);context.modifierLabels.push("プリズムアーマー");}
       break;
     case "punk-rock":
-      if(moveIsSound(context.moveEntry)){context.finalDamageMultiplier*=0.5;context.modifierLabels.push("パンクロック");}
+      if(moveIsSound(context.moveEntry)){context.finalDamageMultiplier=chainFixedMod(context.finalDamageMultiplier,FIXED_MODS.HALF);context.modifierLabels.push("パンクロック");}
       break;
     case "purifying-salt":
-      if(context.moveType==="ゴースト"){context.finalDamageMultiplier*=0.5;context.modifierLabels.push("きよめのしお");}
+      if(context.moveType==="ゴースト"){context.finalDamageMultiplier=chainFixedMod(context.finalDamageMultiplier,FIXED_MODS.HALF);context.modifierLabels.push("きよめのしお");}
       break;
     case "wonder-guard":
       if(context.typeEffectiveness<=1){context.typeEffectiveness=0;context.modifierLabels.push("ふしぎなまもり");}
@@ -478,82 +488,82 @@ function calculateDamage(){
     effectiveMovePower*=2;
     moveSpecificLabels.push("だいちのはどう");
   }
-  let context={moveEntry,moveType,originalMoveType:moveType,movePower:effectiveMovePower,isPhysical,hitCount,powerMultiplier:1,attackMultiplier:1,defenseMultiplier:1,finalDamageMultiplier:1,firstHitOnlyFinalDamageMultiplier:1,typeEffectiveness:1,modifierLabels:[...moveSpecificLabels],ignoreDefenderAbility:false};
+  let context={moveEntry,moveType,originalMoveType:moveType,movePower:effectiveMovePower,isPhysical,hitCount,powerMultiplier:FIXED_MODS.NEUTRAL,attackMultiplier:FIXED_MODS.NEUTRAL,attackStatMultiplier:FIXED_MODS.NEUTRAL,defenseMultiplier:FIXED_MODS.NEUTRAL,defenseStatMultiplier:FIXED_MODS.NEUTRAL,finalDamageMultiplier:FIXED_MODS.NEUTRAL,firstHitOnlyFinalDamageMultiplier:FIXED_MODS.NEUTRAL,typeEffectiveness:1,modifierLabels:[...moveSpecificLabels],ignoreDefenderAbility:false};
   if(byId("helpingHand").checked){
-    context.powerMultiplier*=1.5;
+    context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.ONE_HALF);
     context.modifierLabels.push("てだすけ");
   }
   if(byId("allySteelySpirit").checked&&moveType==="はがね"){
-    context.powerMultiplier*=1.5;
+    context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.ONE_HALF);
     context.modifierLabels.push("味方はがねのせいしん");
   }
   if(byId("allyBattery").checked&&!isPhysical){
-    context.powerMultiplier*=1.3;
+    context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.THIRD_BOOST);
     context.modifierLabels.push("味方バッテリー");
   }
   if(byId("allyPowerSpot").checked){
-    context.powerMultiplier*=1.3;
+    context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.THIRD_BOOST);
     context.modifierLabels.push("味方パワースポット");
   }
   if(!areItemsSuppressed("attacker")){
     if(byId("muscleBand").checked&&isPhysical){
-      context.powerMultiplier*=1.1;
+      context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.TENTH_BOOST);
       context.modifierLabels.push("ちからのハチマキ");
     }
     if(byId("wiseGlasses").checked&&!isPhysical){
-      context.powerMultiplier*=1.1;
+      context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.TENTH_BOOST);
       context.modifierLabels.push("ものしりメガネ");
     }
     if(byId("typeBoostItem").checked&&moveType==="ノーマル"){
-      context.powerMultiplier*=1.3;
+      context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.THIRD_BOOST);
       context.modifierLabels.push("ジュエル");
     }
     if(byId("choiceBand").checked&&isPhysical){
-      context.attackMultiplier*=1.5;
+      context.attackMultiplier=chainFixedMod(context.attackMultiplier,FIXED_MODS.ONE_HALF);
       context.modifierLabels.push("こだわりハチマキ");
     }
     if(byId("choiceSpecs").checked&&!isPhysical){
-      context.attackMultiplier*=1.5;
+      context.attackMultiplier=chainFixedMod(context.attackMultiplier,FIXED_MODS.ONE_HALF);
       context.modifierLabels.push("こだわりメガネ");
     }
   }
   context=applyAttackerAbilityModifiers(context);
   moveType=context.moveType;
   const aura=getAuraModifier(moveType);
-  if(aura.multiplier!==1){
-    context.powerMultiplier*=aura.multiplier;
+  if(aura.modifier!==FIXED_MODS.NEUTRAL){
+    context.powerMultiplier=chainFixedMod(context.powerMultiplier,aura.modifier);
     context.modifierLabels.push(aura.label);
   }
   if(terrain==="electric"&&moveType==="でんき"&&attackerGrounded){
-    context.powerMultiplier*=1.3;
+    context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.THIRD_BOOST);
     context.modifierLabels.push("エレキフィールド");
   }
   if(terrain==="electric"&&moveApiName==="rising-voltage"&&defenderGrounded){
-    context.powerMultiplier*=2;
+    context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.DOUBLE);
     context.modifierLabels.push("ライジングボルト");
   }
   if(terrain==="grassy"&&moveType==="くさ"&&attackerGrounded){
-    context.powerMultiplier*=1.3;
+    context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.THIRD_BOOST);
     context.modifierLabels.push("グラスフィールド");
   }
   if(terrain==="grassy"&&GRASSY_TERRAIN_HALVED_MOVE_APIS.has(moveApiName)&&defenderGrounded){
-    context.powerMultiplier*=0.5;
+    context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.HALF);
     context.modifierLabels.push("グラスフィールドで半減");
   }
   if(terrain==="psychic"&&moveType==="エスパー"&&attackerGrounded){
-    context.powerMultiplier*=1.3;
+    context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.THIRD_BOOST);
     context.modifierLabels.push("サイコフィールド");
   }
   if(terrain==="psychic"&&moveApiName==="expanding-force"&&attackerGrounded){
-    context.powerMultiplier*=1.5;
+    context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.ONE_HALF);
     context.modifierLabels.push("ワイドフォース");
   }
   if(terrain==="misty"&&moveType==="ドラゴン"&&defenderGrounded){
-    context.finalDamageMultiplier*=0.5;
+    context.finalDamageMultiplier=chainFixedMod(context.finalDamageMultiplier,FIXED_MODS.HALF);
     context.modifierLabels.push("ミストフィールド");
   }
   if(terrain==="misty"&&moveApiName==="misty-explosion"&&attackerGrounded){
-    context.powerMultiplier*=1.5;
+    context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.ONE_HALF);
     context.modifierLabels.push("ミストバースト");
   }
   const defenderTypes=[byId("defenderType1").value,byId("defenderType2").value].filter(Boolean);
@@ -564,20 +574,20 @@ function calculateDamage(){
   }
   context=applyAttackerPostTypeModifiers(context);
   if(!isPhysical&&getActiveWeather()==="sand"&&defenderTypes.includes("いわ")){
-    context.defenseMultiplier*=1.5;
+    context.defenseStatMultiplier=chainFixedMod(context.defenseStatMultiplier,FIXED_MODS.ONE_HALF);
     context.modifierLabels.push("すなあらし特防補正");
   }
   if(isPhysical&&getActiveWeather()==="snow"&&defenderTypes.includes("こおり")){
-    context.defenseMultiplier*=1.5;
+    context.defenseStatMultiplier=chainFixedMod(context.defenseStatMultiplier,FIXED_MODS.ONE_HALF);
     context.modifierLabels.push("ゆき防御補正");
   }
   if(!areItemsSuppressed("defender")){
     if(byId("assaultVest").checked&&!isPhysical){
-      context.defenseMultiplier*=1.5;
+      context.defenseMultiplier=chainFixedMod(context.defenseMultiplier,FIXED_MODS.ONE_HALF);
       context.modifierLabels.push("とつげきチョッキ");
     }
     if(byId("eviolite").checked){
-      context.defenseMultiplier*=1.5;
+      context.defenseMultiplier=chainFixedMod(context.defenseMultiplier,FIXED_MODS.ONE_HALF);
       context.modifierLabels.push("しんかのきせき");
     }
   }
@@ -595,49 +605,53 @@ function calculateDamage(){
     context.modifierLabels.push(moveCategory==="physical"?"高い攻撃値で物理化":"高い攻撃値で特殊維持");
   }
   const defenderStatValue=usesDefenseStat?defenderStats.def:(isPhysical?defenderStats.def:defenderStats.spd);
-  const finalPower=Math.max(1,Math.floor(context.movePower*context.powerMultiplier));
-  const finalAttack=Math.max(1,Math.floor(applyStage(attackerStatValue,usesManualAttackStat?0:effectiveAttackStage)*context.attackMultiplier));
-  const finalDefense=Math.max(1,Math.floor(applyStage(defenderStatValue,effectiveDefenseStage)*context.defenseMultiplier));
+  const stagedAttackStat=applyStage(attackerStatValue,usesManualAttackStat?0:effectiveAttackStage);
+  const stagedDefenseStat=applyStage(defenderStatValue,effectiveDefenseStage);
+  const finalPower=Math.max(1,applyFixedMod(context.movePower,context.powerMultiplier));
+  const stagedAttackAfterStatMod=Math.max(1,applyFixedMod(stagedAttackStat,context.attackStatMultiplier,"floor"));
+  const stagedDefenseAfterStatMod=Math.max(1,applyFixedMod(stagedDefenseStat,context.defenseStatMultiplier,"floor"));
+  const finalAttack=Math.max(1,applyFixedMod(usesManualAttackStat?attackerStatValue:stagedAttackAfterStatMod,context.attackMultiplier));
+  const finalDefense=Math.max(1,applyFixedMod(stagedDefenseAfterStatMod,context.defenseMultiplier));
   const stab=getStabModifier(moveType);
   const weather=getWeatherModifier(moveType);
-  const critical=isCriticalHit?1.5:1;
-  const burn=isPhysical&&byId("isBurned").checked&&!isAbilityActive("attacker","guts")&&!isAbilityActive("attacker","water-bubble")?0.5:1;
-  const spread=byId("doubleBattle").checked&&byId("applySpreadPenalty").checked&&isSpreadTarget(byId("moveTarget").value)?0.75:1;
-  if(spread!==1)context.modifierLabels.push("範囲減衰");
+  const critical=isCriticalHit?FIXED_MODS.ONE_HALF:FIXED_MODS.NEUTRAL;
+  const burn=isPhysical&&byId("isBurned").checked&&!isAbilityActive("attacker","guts")&&!isAbilityActive("attacker","water-bubble")?FIXED_MODS.HALF:FIXED_MODS.NEUTRAL;
+  const spread=byId("doubleBattle").checked&&byId("applySpreadPenalty").checked&&isSpreadTarget(byId("moveTarget").value)?FIXED_MODS.THREE_QUARTERS:FIXED_MODS.NEUTRAL;
+  if(spread!==FIXED_MODS.NEUTRAL)context.modifierLabels.push("範囲減衰");
   if(hitCount>1)context.modifierLabels.push(`${hitCount}回命中`);
   if(isCriticalHit)context.modifierLabels.push("急所");
   if(usesDefenseStat)context.modifierLabels.push("防御参照");
   if(ignoresNegativeAttackStage)context.modifierLabels.push("急所で攻撃下降無視");
   if(ignoresDefenderStatStages)context.modifierLabels.push("相手能力変化無視");
   else if(ignoresPositiveDefenseStage)context.modifierLabels.push("急所で防御上昇無視");
-  if(isAbilityActive("attacker","adaptability")&&stab!==1)context.modifierLabels.push("てきおうりょく");
-  if(stab!==1)context.modifierLabels.push(`タイプ一致 ${formatMultiplier(stab)}`);
-  if(weather!==1)context.modifierLabels.push(getActiveWeather()==="sun"?"晴れ補正":"雨補正");
+  if(isAbilityActive("attacker","adaptability")&&stab!==FIXED_MODS.NEUTRAL)context.modifierLabels.push("てきおうりょく");
+  if(stab!==FIXED_MODS.NEUTRAL)context.modifierLabels.push(`タイプ一致 ${formatFixedMod(stab)}`);
+  if(weather!==FIXED_MODS.NEUTRAL)context.modifierLabels.push(getActiveWeather()==="sun"?"晴れ補正":"雨補正");
   if(weatherSuppressed)context.modifierLabels.push("エアロック系");
-  if(burn!==1)context.modifierLabels.push("やけど");
+  if(burn!==FIXED_MODS.NEUTRAL)context.modifierLabels.push("やけど");
   const screenActive=byId("auroraVeil").checked||(isPhysical?byId("reflect").checked:byId("lightScreen").checked);
   if(screenActive){
     if(ignoresScreens){
       context.modifierLabels.push(isCriticalHit?"急所で壁無視":"壁破壊");
     }else{
-      context.finalDamageMultiplier*=byId("doubleBattle").checked?2/3:0.5;
+      context.finalDamageMultiplier=chainFixedMod(context.finalDamageMultiplier,byId("doubleBattle").checked?FIXED_MODS.SCREEN_DOUBLE:FIXED_MODS.HALF);
       context.modifierLabels.push(byId("auroraVeil").checked?"オーロラベール":isPhysical?"リフレクター":"ひかりのかべ");
     }
   }
   if(!areItemsSuppressed("attacker")&&byId("lifeOrb").checked){
-    context.finalDamageMultiplier*=1.3;
+    context.finalDamageMultiplier=chainFixedMod(context.finalDamageMultiplier,FIXED_MODS.THIRD_BOOST);
     context.modifierLabels.push("いのちのたま");
   }
   if(!areItemsSuppressed("attacker")&&byId("expertBelt").checked&&context.typeEffectiveness>1){
-    context.finalDamageMultiplier*=1.2;
+    context.finalDamageMultiplier=chainFixedMod(context.finalDamageMultiplier,FIXED_MODS.FIFTH_BOOST);
     context.modifierLabels.push("たつじんのおび");
   }
   if(!areItemsSuppressed("defender")&&byId("resistBerry").checked&&context.typeEffectiveness>1){
-    context.finalDamageMultiplier*=0.5;
+    context.finalDamageMultiplier=chainFixedMod(context.finalDamageMultiplier,FIXED_MODS.HALF);
     context.modifierLabels.push("半減きのみ");
   }
   if(context.typeEffectiveness===0){
-    updateResultDisplay({range:"0 - 0",percent:"0.0% - 0.0%",ko:"無効",finalPower:String(finalPower),finalAttack:String(finalAttack),finalDefense:String(finalDefense),typeEffectiveness:formatMultiplier(context.typeEffectiveness),stab:formatMultiplier(stab),modifiers:buildModifierSummary(context.modifierLabels),bar:0,category:moveCategory});
+    updateResultDisplay({range:"0 - 0",percent:"0.0% - 0.0%",ko:"無効",finalPower:String(finalPower),finalAttack:String(finalAttack),finalDefense:String(finalDefense),typeEffectiveness:formatMultiplier(context.typeEffectiveness),stab:formatFixedMod(stab),modifiers:buildModifierSummary(context.modifierLabels),bar:0,category:moveCategory});
     return;
   }
   const level=sanitizeNumber(byId("level").value,50);
@@ -646,16 +660,16 @@ function calculateDamage(){
   const rolls=[];
   for(let roll=85;roll<=100;roll+=1){
     let damage=baseDamage;
-    damage=Math.max(1,Math.floor(damage*spread));
-    damage=Math.max(1,Math.floor(damage*weather));
-    damage=Math.max(1,Math.floor(damage*critical));
+    damage=Math.max(1,applyFixedMod(damage,spread));
+    damage=Math.max(1,applyFixedMod(damage,weather));
+    damage=Math.max(1,applyFixedMod(damage,critical));
     damage=Math.max(1,Math.floor((damage*roll)/100));
-    damage=Math.max(1,Math.floor(damage*stab));
+    damage=Math.max(1,applyFixedMod(damage,stab));
     damage=Math.max(1,Math.floor(damage*context.typeEffectiveness));
-    damage=Math.max(1,Math.floor(damage*burn));
-    damage=Math.max(1,Math.floor(damage*context.finalDamageMultiplier));
-    const firstHitDamage=context.firstHitOnlyFinalDamageMultiplier!==1?Math.max(1,Math.floor(damage*context.firstHitOnlyFinalDamageMultiplier)):damage;
-    const totalDamage=hitCount>1&&context.firstHitOnlyFinalDamageMultiplier!==1?firstHitDamage+damage*(hitCount-1):damage*hitCount;
+    damage=Math.max(1,applyFixedMod(damage,burn));
+    damage=Math.max(1,applyFixedMod(damage,context.finalDamageMultiplier));
+    const firstHitDamage=context.firstHitOnlyFinalDamageMultiplier!==FIXED_MODS.NEUTRAL?Math.max(1,applyFixedMod(damage,context.firstHitOnlyFinalDamageMultiplier)):damage;
+    const totalDamage=hitCount>1&&context.firstHitOnlyFinalDamageMultiplier!==FIXED_MODS.NEUTRAL?firstHitDamage+damage*(hitCount-1):damage*hitCount;
     rolls.push(totalDamage);
   }
   const minDamage=Math.min(...rolls),maxDamage=Math.max(...rolls),minPercent=minDamage/hp*100,maxPercent=maxDamage/hp*100,ohkoCount=rolls.filter((value)=>value>=hp).length;
@@ -664,7 +678,7 @@ function calculateDamage(){
   else if(ohkoCount>0)koText=`乱数1発 ${((ohkoCount/16)*100).toFixed(1)}%`;
   else if(minDamage*2>=hp)koText="確定2発";
   else if(maxDamage*2>=hp)koText="乱数2発";
-  updateResultDisplay({range:`${minDamage} - ${maxDamage}`,percent:`${minPercent.toFixed(1)}% - ${maxPercent.toFixed(1)}%`,ko:koText,finalPower:String(finalPower),finalAttack:String(finalAttack),finalDefense:String(finalDefense),typeEffectiveness:formatMultiplier(context.typeEffectiveness),stab:formatMultiplier(stab),modifiers:buildModifierSummary(context.modifierLabels),bar:Math.min(maxPercent,100),category:moveCategory});
+  updateResultDisplay({range:`${minDamage} - ${maxDamage}`,percent:`${minPercent.toFixed(1)}% - ${maxPercent.toFixed(1)}%`,ko:koText,finalPower:String(finalPower),finalAttack:String(finalAttack),finalDefense:String(finalDefense),typeEffectiveness:formatMultiplier(context.typeEffectiveness),stab:formatFixedMod(stab),modifiers:buildModifierSummary(context.modifierLabels),bar:Math.min(maxPercent,100),category:moveCategory});
 }
 function typeIconPath(type){return type?`type/${type}.png`:"";}
 function renderTypeIcons(targetId,types){byId(targetId).innerHTML=(types||[]).filter(Boolean).map((type)=>`<span class="type-icon-chip" title="${escapeHtml(type)}"><img src="${escapeHtml(typeIconPath(type))}" alt="${escapeHtml(type)}"></span>`).join("");}
@@ -699,5 +713,3 @@ function initializeDefaults(){renderStages("attackStage");renderStages("specialA
 function initializeSelectors(){renderTypeOptions(byId("attackerType1"),true);renderTypeOptions(byId("attackerType2"),true);renderTypeOptions(byId("defenderType1"),true);renderTypeOptions(byId("defenderType2"),true);renderTypeOptions(byId("moveType"),false);renderTargetOptions();renderAbilityOptions("attacker",null);renderAbilityOptions("defender",null);}
 function initialize(){if(isBlockedHost()){renderBlockedHostMessage();return;}initializeDefaults();if(!buildDataStore())return;initializeSelectors();fillDataList("pokemonOptions",dataStore.pokemonEntries);fillDataList("moveOptions",dataStore.moveEntries);bindLookupEvents();bindFieldEvents();restoreState();tryApplyPokemon("attacker",false,true);tryApplyPokemon("defender",false,true);tryApplyMove(false,true);renderPokemonArtwork("attacker",findEntryExact(dataStore.pokemonLookup,byId("attackerName").value));renderPokemonArtwork("defender",findEntryExact(dataStore.pokemonLookup,byId("defenderName").value));updateCalculator();}
 initialize();
-
-
