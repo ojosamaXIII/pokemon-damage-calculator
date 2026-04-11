@@ -3,7 +3,7 @@ const TYPE_CHART={ノーマル:{いわ:0.5,ゴースト:0,はがね:0.5},ほの�
 const TARGET_ORDER=["1匹選択","選択した相手","相手全体","全体","自分以外","相手の場","味方の場","自分の場","ランダム1体","自分"];
 const STATS=[{key:"hp",label:"HP",nature:false},{key:"atk",label:"攻撃",nature:true},{key:"def",label:"防御",nature:true},{key:"spa",label:"特攻",nature:true},{key:"spd",label:"特防",nature:true},{key:"spe",label:"素早",nature:true}];
 const SIDE_VISIBLE_STATS={attacker:["atk","spa"],defender:["hp","def","spd"]};
-const FIELD_IDS=["level","weather","terrain","attackerGrounded","defenderGrounded","doubleBattle","moveName","moveType","moveCategory","movePower","moveAccuracy","moveTarget","moveHits","moveVariablePower","moveUserDefenseActual","moveTargetAttackActual","moveTargetStatused","moveTargetHasItem","attackerName","attackerAbility","attackerAbilityEnabled","supremeOverlordMultiplier","attackerType1","attackerType2","attackStage","specialAttackStage","defenderName","defenderAbility","defenderAbilityEnabled","defenderType1","defenderType2","defenseStage","specialDefenseStage","isCritical","applySpreadPenalty","helpingHand","allySteelySpirit","allyBattery","allyPowerSpot","isBurned","hasPoison","hasParalysis","hasSleep","hasFreeze","defenderStatused","defenderFullHp","reflect","lightScreen","auroraVeil","choiceBand","choiceSpecs","lifeOrb","expertBelt","muscleBand","wiseGlasses","typeBoostItem","assaultVest","eviolite","resistBerry"];
+const FIELD_IDS=["level","weather","terrain","attackerGrounded","defenderGrounded","doubleBattle","moveName","moveType","moveCategory","movePower","moveAccuracy","moveTarget","moveHits","moveVariablePower","moveUserDefenseActual","moveTargetAttackActual","moveTargetStatused","moveTargetHasItem","attackerName","attackerAbility","attackerAbilityEnabled","supremeOverlordMultiplier","attackerType1","attackerType2","attackStage","specialAttackStage","defenderName","defenderAbility","defenderAbilityEnabled","defenderType1","defenderType2","defenseStage","specialDefenseStage","isCritical","applySpreadPenalty","helpingHand","allySteelySpirit","allyBattery","allyPowerSpot","isBurned","hasPoison","hasParalysis","hasSleep","hasFreeze","defenderStatused","defenderFullHp","reflect","lightScreen","auroraVeil","choiceBand","choiceSpecs","lifeOrb","expertBelt","muscleBand","wiseGlasses","typeEnhancer","typeBoostItem","assaultVest","eviolite","resistBerry"];
 const dataStore={pokemonEntries:[],moveEntries:[],pokemonLookup:new Map(),moveLookup:new Map(),types:[],targets:[],selectedPokemon:{attacker:null,defender:null},selectedMove:null};
 const byId=(id)=>document.getElementById(id);
 const sanitizeNumber=(value,fallback=0)=>{const n=Number(value);return Number.isFinite(n)?n:fallback;};
@@ -108,7 +108,7 @@ function moveMakesContact(moveEntry){if(!moveEntry||moveEntry.category!=="physic
 function attackerIgnoresDefenderAbility(){return ["mold-breaker","teravolt","turboblaze"].some((ability)=>isAbilityActive("attacker",ability));}
 function isGrounded(side){return Boolean(byId(`${side}Grounded`)?.checked);}
 function terrainTypeName(terrain){return({electric:"でんき",grassy:"くさ",psychic:"エスパー",misty:"フェアリー"})[terrain]||"";}
-function getCheckedItemCount(){return["choiceBand","choiceSpecs","lifeOrb","expertBelt","muscleBand","wiseGlasses","typeBoostItem"].filter((id)=>byId(id)?.checked).length;}
+function getCheckedItemCount(){return["choiceBand","choiceSpecs","lifeOrb","expertBelt","muscleBand","wiseGlasses","typeEnhancer","typeBoostItem"].filter((id)=>byId(id)?.checked).length;}
 function hasAttackerHeldItem(){return getCheckedItemCount()>0;}
 function toggleHidden(id,hidden){const element=byId(id);if(element)element.classList.toggle("is-hidden",hidden);}
 function getMoveSpecificConfig(moveEntry){
@@ -513,6 +513,10 @@ function calculateDamage(){
     if(byId("wiseGlasses").checked&&!isPhysical){
       context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.TENTH_BOOST);
       context.modifierLabels.push("ものしりメガネ");
+    }
+    if(byId("typeEnhancer").checked){
+      context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.FIFTH_BOOST);
+      context.modifierLabels.push("タイプ強化");
     }
     if(byId("typeBoostItem").checked&&moveType==="ノーマル"){
       context.powerMultiplier=chainFixedMod(context.powerMultiplier,FIXED_MODS.THIRD_BOOST);
