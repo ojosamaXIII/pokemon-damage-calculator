@@ -306,6 +306,10 @@ def fetch_pokemon_entry(pokemon_ref: dict[str, Any]) -> dict[str, Any] | None:
         return None
 
     stats = {stat["stat"]["name"]: stat["base_stat"] for stat in pokemon["stats"]}
+    required_stats = {"hp", "attack", "defense", "special-attack", "special-defense", "speed"}
+    if not required_stats.issubset(stats):
+        print(f"[warn] pokemon skipped: {pokemon['name']} (missing stats)", file=sys.stderr)
+        return None
     types = [
         TYPE_NAME_MAP.get(type_slot["type"]["name"], type_slot["type"]["name"])
         for type_slot in sorted(pokemon["types"], key=lambda item: item["slot"])
